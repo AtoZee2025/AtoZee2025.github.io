@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Wedding Seating & Check‑In</title>
+  <meta name="theme-color" content="#ffffff">
+  <style>
+/* Fade & lift on first render */
+.card{ opacity:0; transform:translateY(6px); animation:cardIn .35s both; }
+.card:nth-child(2){ animation-delay:.04s } .card:nth-child(3){ animation-delay:.08s } .card:nth-child(4){ animation-delay:.12s }
+@keyframes cardIn{ to{ opacity:1; transform:none } }
+
+/* Hover micro-interaction */
+.card:hover{ transform:translateY(-2px); box-shadow:0 12px 24px -18px rgba(0,0,0,.25); transition:transform .15s ease, box-shadow .15s ease; }
+    :root{
+      --bg:#f7f7fb;
+      --card:#ffffff;
+      --ink:#111827;
+      --muted:#6b7280;
+      --accent:#4f46e5;
+      --accent-ink:#ffffff;
+      --ok:#16a34a;
+      --warn:#b45309;
+      --danger:#dc2626;
+      --radius:16px;
+      --shadow: 0 10px 20px -10px rgba(0,0,0,.2);
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji","Segoe UI Emoji";
+      background:var(--bg);
+      color:var(--ink);
+    }
+    .container{max-width:960px;margin:0 auto;padding:24px}
+    .app{
+      background:var(--card);
+      border-radius:var(--radius);
+      box-shadow:var(--shadow);
+      padding: clamp(16px, 4vw, 28px);
+    }
+    header{
+      display:flex;
+      flex-wrap:wrap;
+      gap:12px;
+      align-items:center;
+      justify-content:space-between;
+      margin-bottom:16px;
+    }
+    .brand{
+      display:flex;gap:12px;align-items:center;
+    }
+    .brand .emoji{font-size:28px}
+    .brand h1{font-size:18px;margin:0;line-height:1.2}
+    .brand p{margin:0;color:var(--muted);font-size:12px}
+    .controls{display:flex;gap:8px;flex-wrap:wrap}
+    button, .file-button{
+      appearance:none;border:1px solid #e5e7eb;background:#fff;color:var(--ink);
+      padding:10px 12px;border-radius:10px;font-size:14px;cursor:pointer;
+    }
+    button.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+    button.ghost{background:transparent}
+    button[disabled]{opacity:.6;cursor:not-allowed}
+    input[type="search"]{
+      width:100%;padding:14px 16px;border-radius:12px;border:1px solid #e5e7eb;font-size:16px;
+      outline: none;
+    }
+    .pill{
+      display:inline-flex;align-items:center;gap:6px;
+      padding:6px 10px;border-radius:999px;font-size:12px;background:#f3f4f6;color:#374151;border:1px solid #e5e7eb
+    }
+    .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+    .hint{color:var(--muted);font-size:12px}
+    .results{
+      margin-top:14px;display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px;
+    }
+    .card{
+      border:1px solid #e5e7eb;border-radius:14px;background:#fff;padding:14px;display:flex;flex-direction:column;gap:8px
+    }
+    .name{font-weight:700;font-size:16px}
+    .meta{color:var(--muted);font-size:12px}
+    .badge{font-size:12px;padding:4px 8px;border-radius:999px;background:#eef2ff;color:#3730a3;display:inline-block}
+    .actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:4px}
+    .checked{background:#ecfdf5;border-color:#bbf7d0}
+    .checked .name{color:#065f46}
+    .footer{margin-top:18px;color:var(--muted);font-size:12px;text-align:center}
+    .detail{
+      position:fixed;inset:0;background:rgba(17,24,39,.5);display:none;align-items:center;justify-content:center;padding:16px;
+    }
+    .detail.open{display:flex}
+    .sheet{
+      width:min(560px, 100%);background:#fff;border-radius:16px;padding:18px;border:1px solid #e5e7eb;box-shadow:var(--shadow);
+      max-height:90vh;overflow:auto;
+    }
+    .sheet h2{margin:0 0 8px 0}
+    .sheet .table{font-weight:700;font-size:18px}
+    .sheet .sub{color:var(--muted);font-size:13px;margin-bottom:8px}
+    .sheet .checkrow{display:flex;gap:10px;align-items:center;margin-top:6px}
+    .sheet .close{float:right}
+    .stats{display:flex;gap:10px;flex-wrap:wrap;margin-top:8px}
+    .stats .pill{background:#fdf2f8;color:#9d174d}
+    .file-input{display:none}
+    .divider{height:1px;background:#e5e7eb;margin:10px 0}
+    .hidden{display:none}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="app" role="application" aria-label="Wedding seating and check-in">
+      <header>
+        <div class="brand">
+          <div class="emoji" aria-hidden="true">💒</div>
+          <div>
+            <h1 id="eventTitle">Wedding Seating & Check‑In</h1>
+            <p id="eventSub" class="hint">Scan, search your name, tap to see your seat ✨</p>
+          </div>
+        </div>
+        <div class="controls">
+          <label class="file-button">
+            Import CSV
+            <input class="file-input" id="csvInput" type="file" accept=".csv" />
+          </label>
+          <button id="export" title="Export check-in state as CSV">Export</button>
+          <button id="reset" class="ghost" title="Clear check-ins on this device only">Clear Check‑Ins</button>
+        </div>
+      </header>
+
+      <div class="row">
+        <input id="search" type="search" inputmode="search" aria-label="Search guests" placeholder="Search for your name…" autofocus />
+        <span class="pill" id="countPill">0 guests</span>
+      </div>
+      <div class="hint" id="helper">Tip: Try your first or last name. Accents and nicknames work too.</div>
+
+      <div id="results" class="results" role="list"></div>
+
+      <div class="footer">
+        <div class="stats">
+          <span class="pill" id="checkedStat">Checked in: 0</span>
+          <span class="pill" id="remainingStat">Remaining: 0</span>
+        </div>
+        <div class="hint" style="margin-top:8px">
+          Data is stored only in your browser (no server). Import your CSV on each device doing check‑in.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="detail" id="detail" role="dialog" aria-modal="true" aria-labelledby="detailTitle">
+    <div class="sheet">
+      <button class="close" id="closeDetail" aria-label="Close">✕</button>
+      <h2 id="detailTitle">Guest</h2>
+      <div class="sub" id="detailSub"></div>
+      <div class="divider"></div>
+      <div class="table">Table: <span id="detailTable"></span> <span id="detailSeat" class="badge hidden"></span></div>
+      <div id="detailNotes" class="meta" style="margin-top:6px"></div>
+      <div class="checkrow">
+        <input type="checkbox" id="checkToggle" />
+        <label for="checkToggle">Mark as checked in</label>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // --- Utilities ---
+    const $ = sel => document.querySelector(sel);
+    const $$ = sel => Array.from(document.querySelectorAll(sel));
+    const norm = s => (s||"").toString()
+      .toLowerCase()
+      .normalize('NFD').replace(/\p{Diacritic}/gu,'')
+      .replace(/\s+/g,' ').trim();
+    const debounce = (fn, ms=150) => { let t; return (...args)=>{ clearTimeout(t); t=setTimeout(()=>fn(...args), ms); }; };
+    const uid = () => Math.random().toString(36).slice(2,9);
+
+    // --- State ---
+    let GUESTS = [];      // {id,name,table,seat,group,notes,side}
+    let FILTERED = [];
+    const STORAGE_KEY = "wedding_checkin_v1";
+
+    // Sample data (you can delete this after importing your CSV)
+    const SAMPLE = [
+      {name:"Annie Nguyen", table:"Table 5", seat:"A", group:"Nguyen family", side:"Bride", notes:"Vegetarian"},
+      {name:"George Li", table:"Table 5", seat:"B", group:"Li family", side:"Groom"},
+      {name:"Alex Chen", table:"Table 12", seat:"", group:"Friends", side:"Groom"},
+      {name:"Priya Patel", table:"Table 8", seat:"", group:"Work Friends", side:"Bride", notes:"Allergic to peanuts"},
+      {name:"Michael & Sarah Kim", table:"Table 3", seat:"", group:"Kim family", side:"Bride"},
+      {name:"Grandma Wong", table:"VIP 1", seat:"", side:"Bride"},
+      {name:"Uncle Tom", table:"VIP 1", seat:"", side:"Groom"}
+    ];
+
+    // --- CSV Parsing & Export ---
+    function parseCSV(text){
+      // Simple CSV parser that handles commas in quotes and newlines
+      const rows = [];
+      let i=0, cur="", inQ=false, row=[];
+      while(i<text.length){
+        const c = text[i++];
+        if(c === '"'){
+          if(inQ && text[i] === '"'){ cur+='"'; i++; }
+          else inQ = !inQ;
+        }else if(c === ',' && !inQ){
+          row.push(cur); cur="";
+        }else if((c === '\n' || c === '\r') && !inQ){
+          if(cur.length || row.length){ row.push(cur); rows.push(row); row=[]; cur=""; }
+        }else{
+          cur += c;
+        }
+      }
+      if(cur.length || row.length){ row.push(cur); rows.push(row); }
+      return rows;
+    }
+
+    function csvToGuests(text){
+      const rows = parseCSV(text).filter(r=>r.some(cell=>cell.trim().length));
+      if(rows.length===0) return [];
+      const header = rows[0].map(h=>norm(h));
+      const idx = (name) => header.indexOf(norm(name));
+      const mapRow = (r)=> ({
+        name: r[idx('name')] || r[idx('guest')] || r[0] || "",
+        table: r[idx('table')] || r[idx('assignment')] || "",
+        seat: r[idx('seat')] || "",
+        group: r[idx('group')] || r[idx('party')] || "",
+        side: r[idx('side')] || r[idx('bride/groom')] || r[idx('bridegroom')] || "",
+        notes: r[idx('notes')] || r[idx('dietary')] || "",
+      });
+      const out = rows.slice(1).map(mapRow).filter(g=>g.name);
+      return out;
+    }
+
+    function exportCSV(guests){
+      const cols = ["Name","Table","Seat","Group","Side","Notes","CheckedIn"];
+      const lines = [cols.join(",")];
+      const checked = loadChecked();
+      guests.forEach(g=>{
+        const row = [
+          g.name, g.table||"", g.seat||"", g.group||"", g.side||"", g.notes||"",
+          checked[g.id||norm(g.name)] ? "Yes":"No"
+        ].map(v=>{
+          v = (v??"").toString();
+          return /[",\n]/.test(v) ? '"' + v.replace(/"/g,'""') + '"' : v;
+        }).join(",");
+        lines.push(row);
+      });
+      return lines.join("\n");
+    }
+
+    // --- Storage ---
+    function loadChecked(){
+      try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; } catch { return {}; }
+    }
+    function saveChecked(map){ localStorage.setItem(STORAGE_KEY, JSON.stringify(map)); }
+
+    // --- Rendering ---
+    function render(){
+      const list = $("#results"); list.innerHTML="";
+      const checked = loadChecked();
+
+      FILTERED.forEach(g=>{
+        const card = document.createElement('button');
+        card.className = 'card';
+        card.setAttribute('role','listitem');
+        card.onclick = ()=> openDetail(g.id);
+
+        if(checked[g.id]) card.classList.add('checked');
+
+        const name = document.createElement('div');
+        name.className = 'name';
+        name.textContent = g.name;
+
+        const meta = document.createElement('div');
+        meta.className = 'meta';
+        meta.textContent = [g.group, g.side].filter(Boolean).join(" • ");
+
+        const row = document.createElement('div');
+        row.className='row';
+        const b1 = document.createElement('span'); b1.className='badge'; b1.textContent = g.table || "Unassigned";
+        row.appendChild(b1);
+        if(g.seat){
+          const b2 = document.createElement('span'); b2.className='badge'; b2.textContent = "Seat "+g.seat;
+          row.appendChild(b2);
+        }
+
+        const actions = document.createElement('div');
+        actions.className='actions';
+        const mark = document.createElement('span'); mark.className='pill';
+        mark.textContent = checked[g.id] ? "✓ Checked in" : "Tap to view seat";
+        actions.appendChild(mark);
+
+        card.appendChild(name);
+        if(meta.textContent) card.appendChild(meta);
+        card.appendChild(row);
+        card.appendChild(actions);
+        list.appendChild(card);
+      });
+
+      // Stats
+      const total = GUESTS.length;
+      const checkedCount = Object.values(loadChecked()).filter(Boolean).length;
+      $("#countPill").textContent = total+" guests";
+      $("#checkedStat").textContent = "Checked in: "+checkedCount;
+      $("#remainingStat").textContent = "Remaining: "+Math.max(0, total-checkedCount);
+    }
+
+    function openDetail(id){
+      const g = GUESTS.find(x=>x.id===id); if(!g) return;
+      $("#detailTitle").textContent = g.name;
+      $("#detailSub").textContent = [g.group, g.side].filter(Boolean).join(" • ") || "Guest";
+      $("#detailTable").textContent = g.table || "Unassigned";
+      const seat = $("#detailSeat");
+      if(g.seat){ seat.textContent = "Seat "+g.seat; seat.classList.remove("hidden"); } else { seat.classList.add("hidden"); }
+      $("#detailNotes").textContent = g.notes || "";
+      const checked = loadChecked();
+      const chk = $("#checkToggle");
+      chk.checked = !!checked[g.id];
+      chk.onchange = ()=>{
+        const map = loadChecked();
+        map[g.id] = chk.checked;
+        saveChecked(map);
+        // Re-render list so the card updates
+        applyFilter($("#search").value);
+        // Also close sheet for speed
+        closeDetail();
+      };
+      $("#detail").classList.add('open');
+    }
+    function closeDetail(){ $("#detail").classList.remove('open'); }
+    $("#closeDetail").onclick = closeDetail;
+    $("#detail").addEventListener('click', (e)=>{ if(e.target.id==="detail") closeDetail(); });
+
+    // --- Filter ---
+    function applyFilter(q){
+      const nq = norm(q);
+      if(!nq){
+        FILTERED = [...GUESTS];
+      }else{
+        FILTERED = GUESTS.filter(g=>{
+          const hay = [g.name, g.group, g.side, g.table, g.seat].map(norm).join(" ");
+          return nq.split(" ").every(tok=> hay.includes(tok));
+        });
+      }
+      render();
+    }
+    const onSearch = debounce(e=> applyFilter(e.target.value), 100);
+    $("#search").addEventListener('input', onSearch);
+
+    // --- Import / Export / Reset ---
+    $("#csvInput").addEventListener('change', async (e)=>{
+      const file = e.target.files[0];
+      if(!file) return;
+      const txt = await file.text();
+      const guests = csvToGuests(txt);
+      if(guests.length === 0){
+        alert("Could not find any rows. Make sure your CSV has a header row with at least the 'Name' column.");
+        return;
+      }
+      loadGuests(guests);
+    });
+
+    $("#export").addEventListener('click', ()=>{
+      const csv = exportCSV(GUESTS);
+      const blob = new Blob([csv], {type:'text/csv'});
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'checkin-export.csv';
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(()=>URL.revokeObjectURL(a.href), 1000);
+    });
+
+    $("#reset").addEventListener('click', ()=>{
+      if(confirm("Clear check‑ins on this device? This does not delete your guest list.")){
+        saveChecked({});
+        render();
+      }
+    });
+
+    // --- Boot ---
+    function loadGuests(items){
+      // Assign stable IDs based on name (and seat) to persist check-in across re-imports
+      GUESTS = items.map(g=>{
+        const id = norm(g.name + '|' + (g.seat||'') + '|' + (g.table||'')) || uid();
+        return {...g, id};
+      });
+      FILTERED = [...GUESTS];
+      render();
+    }
+
+    // Try to load from localStorage "guestList" if present (power users can paste it via console)
+    (function init(){
+      // Start with SAMPLE to show the UI; you will import your real CSV
+      loadGuests(SAMPLE);
+      // Focus search automatically
+      setTimeout(()=> $("#search").focus(), 300);
+    })();
+  </script>
+</body>
+</html>
