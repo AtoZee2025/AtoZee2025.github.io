@@ -23,6 +23,35 @@
     border-radius: 12px;
     margin: clamp(12px, 4vw, 28px) 0;
   }
+/* === Classy halo when the modal opens === */
+.sheet {
+  position: relative;
+}
+
+.sheet.halo::before {
+  content: "";
+  position: absolute;
+  inset: -6px;
+  border-radius: 18px;
+  pointer-events: none;
+  background:
+    radial-gradient(60% 60% at 50% 10%, rgba(203,183,156,.25), transparent 70%),
+    radial-gradient(80% 80% at 50% 50%, rgba(203,183,156,.18), transparent 70%);
+  filter: blur(4px);
+  opacity: 0;
+  animation: haloIn 900ms ease forwards;
+}
+
+@keyframes haloIn {
+  0%   { opacity: 0; transform: scale(.98); }
+  40%  { opacity: .9; transform: scale(1.005); }
+  100% { opacity: .25; transform: scale(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sheet.halo::before { animation: none; opacity: .2; }
+}
+
 
 </style>
 
@@ -81,21 +110,26 @@ input, button, textarea, select {
     .sheet .table{ font-weight:700; font-size:18px }
     .sheet .sub{ color:var(--muted); font-size:13px; margin-bottom:8px }
     .sheet .close{ float:right }
-    .divider{ border-top: 1px solid #cbb79c;
+    .divider {
+  border-top: 1px solid #cbb79c;   /* or whatever style you chose */
   text-align: center;
   margin: 20px 0;
   position: relative;
 }
+
 .divider::before {
-  content: "❧";  /* try ✿, ❦, ♥, ✨ */
+  content: "❧";  /* decorative icon */
   position: absolute;
-  top: -12px;
+  top: 50%;                        /* start at vertical middle */
   left: 50%;
-  transform: translateX(-50%);
-  background: white; /* match your card background */
+  transform: translate(-50%, -55%); /* center horizontally, adjust vertical slightly */
+  background: white;               /* match your card/page bg */
   padding: 0 8px;
   font-size: 18px;
-  color: #cbb79c;  }
+  color: #cbb79c;
+  line-height: 1;
+}
+
     .hidden{ display:none }
 
     .chips{ display:flex; flex-wrap:wrap; gap:8px; margin-top:8px }
@@ -141,7 +175,18 @@ input, button, textarea, select {
       <div class="sub" id="detailSub"></div>
       <div class="divider"></div>
 
-      <div class="table">🪑<span id="detailTable"></span></div>
+      <div class="table">  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 48"
+       width="28" height="28"
+       style="vertical-align:middle; margin-right:6px;">
+    <!-- Table top -->
+    <rect x="6" y="10" width="52" height="10" rx="2" ry="2"
+          fill="#cbb79c" stroke="#a08963" stroke-width="2"/>
+    <!-- Legs -->
+    <rect x="10" y="20" width="4" height="20" fill="#a08963"/>
+    <rect x="50" y="20" width="4" height="20" fill="#a08963"/>
+    <rect x="24" y="20" width="4" height="20" fill="#a08963"/>
+    <rect x="36" y="20" width="4" height="20" fill="#a08963"/>
+  </svg><span id="detailTable"></span></div>
 <div class="chips" id="detailChips"></div>
       <div class="divider"></div>
       <div>
@@ -360,7 +405,11 @@ msgBox.textContent = g.message && g.message.trim()
         li.appendChild(nm);
         list.appendChild(li);
       }
-
+  // 🔆 Add halo animation
+  const sheetEl = document.querySelector('.sheet');
+  sheetEl.classList.remove('halo');
+  void sheetEl.offsetWidth;
+  sheetEl.classList.add('halo');
       $("#detail").classList.add('open');
     }
     function closeDetail(){ $("#detail").classList.remove('open'); }
