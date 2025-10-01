@@ -116,6 +116,12 @@ input, button, textarea, select {
   margin: 5px 0;
 }
 
+.divider {
+  display: flex;
+  align-items: center;
+  margin: 20px 0;
+}
+
 .divider::before,
 .divider::after {
   content: "";
@@ -125,8 +131,10 @@ input, button, textarea, select {
 
 .divider span {
   margin: 0 12px;
-  font-size: 20px;
+  font-size: 18px;
   color: #cbb79c;
+  display: inline-block;
+  transform: translateY(-2px); /* raises the icon up */
 }
 
     .hidden{ display:none }
