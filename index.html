@@ -13,15 +13,6 @@
 <header class="hero-bg"></header>
 
 <style>
-/* Page fade-in on load */
-body {
-  opacity: 0;
-  transition: opacity 0.8s ease;
-}
-
-body.loaded {
-  opacity: 1;
-}
   .hero-bg{
     min-height: clamp(110px, 38vw, 230px);
     background:
@@ -90,7 +81,21 @@ input, button, textarea, select {
     .sheet .table{ font-weight:700; font-size:18px }
     .sheet .sub{ color:var(--muted); font-size:13px; margin-bottom:8px }
     .sheet .close{ float:right }
-    .divider{ height:1px; background:#e5e7eb; margin:10px 0; border: 0; border-top: 1px dashed #d1d5db; margin: 12px 0; }
+    .divider{ border-top: 1px solid #cbb79c;
+  text-align: center;
+  margin: 20px 0;
+  position: relative;
+}
+.divider::before {
+  content: "❧";  /* try ✿, ❦, ♥, ✨ */
+  position: absolute;
+  top: -12px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: white; /* match your card background */
+  padding: 0 8px;
+  font-size: 18px;
+  color: #cbb79c;  }
     .hidden{ display:none }
 
     .chips{ display:flex; flex-wrap:wrap; gap:8px; margin-top:8px }
@@ -450,14 +455,6 @@ function applyFilter(q){
       if(EMBEDDED.length){ loadGuests(EMBEDDED); }
       setTimeout(()=> $("#search").focus(), 300);
     })();
-
   </script>
-<script>
-  // Add "loaded" class when DOM is ready
-  document.addEventListener("DOMContentLoaded", () => {
-    document.body.classList.add("loaded");
-  });
-</script>
-
 </body>
 </html>
