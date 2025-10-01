@@ -5,6 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Wedding Seating Chart</title>
   <meta name="theme-color" content="#ffffff">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+
 
 <!-- Hero banner -->
 <header class="hero-bg"></header>
@@ -20,6 +23,7 @@
     border-radius: 12px;
     margin: clamp(12px, 4vw, 28px) 0;
   }
+
 </style>
 
   <style>
@@ -39,7 +43,18 @@
       --chip-bg:#f3f4f6; --chip-ink:#374151; --badge-bg:#eef2ff; --badge-ink:#3730a3;
     }
     *{box-sizing:border-box} html,body{height:100%}
-    body{ margin:0; font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; background:var(--bg); color:var(--ink); }
+    body{ margin:0; font-family: "Poppins", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; background:var(--bg); color:var(--ink); }
+/* Make sure inputs/buttons inherit the same font */
+input, button, textarea, select {
+  font: inherit;
+}
+
+/* Also override placeholder font */
+::placeholder {
+  font-family: "Poppins", Arial, sans-serif;
+  color: #4b2f29;
+  opacity: 1;
+}
     .container{max-width:960px;margin:0 auto;padding:24px}
     .app{ background:var(--card); border-radius:var(--radius); box-shadow:var(--shadow); padding:clamp(16px,4vw,28px) }
     header{ display:flex; flex-wrap:wrap; gap:12px; align-items:center; justify-content:space-between; margin-bottom:16px }
@@ -53,19 +68,20 @@
     .card{ border:1px solid #e5e7eb; border-radius:14px; background:#fff; padding:14px; display:flex; flex-direction:column; gap:8px; cursor:pointer; opacity:0; transform:translateY(6px); animation:cardIn .35s both; }
     .card:nth-child(2){ animation-delay:.04s } .card:nth-child(3){ animation-delay:.08s } .card:nth-child(4){ animation-delay:.12s }
     @keyframes cardIn{ to{ opacity:1; transform:none } }
+    .card:hover { transform: translateY(-2px); box-shadow: 0 6px 12px rgba(0,0,0,0.15); transition: all 200ms ease; }
     .name{ font-weight:700; font-size:16px }
     .meta{ color:var(--muted); font-size:12px }
     .badge{ font-size:12px; padding:4px 8px; border-radius:999px; background:var(--badge-bg); color:var(--badge-ink); display:inline-block }
     .footer{ margin-top:18px; color:var(--muted); font-size:12px; text-align:center }
 
     .detail{ position:fixed; inset:0; background:rgba(17,24,39,.5); display:none; align-items:center; justify-content:center; padding:16px }
-    .detail.open{ display:flex }
+    .detail.open{ display:flex; backdrop-filter: blur(4px) }
     .sheet{ width:min(640px,100%); background:#fff; border-radius:16px; padding:18px; border:1px solid #e5e7eb; box-shadow:var(--shadow); max-height:90vh; overflow:auto }
     .sheet h2{ margin:0 0 8px 0 }
     .sheet .table{ font-weight:700; font-size:18px }
     .sheet .sub{ color:var(--muted); font-size:13px; margin-bottom:8px }
     .sheet .close{ float:right }
-    .divider{ height:1px; background:#e5e7eb; margin:10px 0 }
+    .divider{ height:1px; background:#e5e7eb; margin:10px 0; border: 0; border-top: 1px dashed #d1d5db; margin: 12px 0; }
     .hidden{ display:none }
 
     .chips{ display:flex; flex-wrap:wrap; gap:8px; margin-top:8px }
@@ -111,17 +127,23 @@
       <div class="sub" id="detailSub"></div>
       <div class="divider"></div>
 
-      <div class="table"><span id="detailTable"></span></div>
+      <div class="table">🪑<span id="detailTable"></span></div>
 <div class="chips" id="detailChips"></div>
       <div class="divider"></div>
       <div>
-        <strong>Photo Group</strong>
+        <strong>📸 Photo Group</strong>
         <div id="detailPhotoGroup" class="chips" style="margin-top:8px;"></div>
       </div>
 
       <div class="divider"></div>
+
+<div>
+  <strong>💌 Message From Annie & George</strong>
+  <div id="detailMessage" class="meta" style="margin-top:8px; font-size:14px; line-height:1.4;"></div>
+</div>
+      <div class="divider"></div>
       <div>
-        <strong>Who Am I Sitting With</strong>
+        <strong>👨‍👩‍👧‍👦 Who Am I Sitting With</strong>
         <ul id="matesList" class="matesList"></ul>
       </div>
     </div>
@@ -182,21 +204,57 @@ function dismissKeyboard() {
       const rows = lines.map(parseLine).filter(r => r.some(x => (x||'').length));
       return rows;
     }
-    function csvToGuests(text){
-      const rows = parseCSVSmart(text);
-      if(rows.length === 0) return [];
-      const header = rows[0].map(h => (h||'').toLowerCase());
-      const idx = k => header.indexOf(k.toLowerCase());
-      const pick = (r, keys) => {
-        for(const k of keys){ const i = idx(k); if(i>-1) return r[i]||''; }
-        return '';
-      };
-      const mapped = rows.slice(1).map(r => ({
-        name:  pick(r, ['name','guest','full name']),
-        table: pick(r, ['table','assignment','table name']),
-        photo_group: pick(r, ['photo group','photogroup','photo_group','photogroup','group'])
-      })).filter(g => g.name);
-      return mapped;
+function csvToGuests(text){
+  const rows = parseCSVSmart(text);
+  if (rows.length === 0) return [];
+
+  // Keep raw + canonical headers
+  const headerRaw = rows[0].map(h => (h || '').trim());
+  const canon = s => (s || '')
+    .toLowerCase()
+    .replace(/&/g, 'and')      // treat "&" as "and"
+    .replace(/[^a-z0-9]/g, ''); // strip spaces, punctuation, diacritics already handled earlier
+
+  const headerCanon = headerRaw.map(canon);
+
+  // Find a column index by trying multiple candidate names (canonicalized)
+  const findIdx = (candidates) => {
+    for (const c of candidates) {
+      const i = headerCanon.indexOf(canon(c));
+      if (i !== -1) return i;
+    }
+    return -1;
+  };
+
+  // Column indices (very permissive)
+  const idxName  = findIdx(["name","guest","full name"]);
+  const idxTable = findIdx(["table","assignment","table name"]);
+  const idxPhoto = findIdx(["photo group","photogroup","photo_group","group"]);
+  const idxMsg   = findIdx([
+    "message from annie & george",
+    "message from annie and george",
+    "message", "note", "msg"
+  ]);
+
+  const get = (r, i) => (i >= 0 && i < r.length) ? (r[i] || "").trim() : "";
+
+  const mapped = rows.slice(1)
+    .map(r => ({
+      name:        (idxName  !== -1 ? get(r, idxName)  : (r[0] || "").trim()),
+      table:       (idxTable !== -1 ? get(r, idxTable) : ""),
+      photo_group: (idxPhoto !== -1 ? get(r, idxPhoto) : ""),
+      message:     (idxMsg   !== -1 ? get(r, idxMsg)   : "")
+    }))
+    .filter(g => g.name);
+
+  // Helpful debug if needed
+  if (!mapped.length) {
+    console.warn("CSV parsed but no guests found. Headers seen:", headerRaw);
+  } else if (mapped.every(g => !g.message)) {
+    console.warn("CSV loaded; 'Message From Annie & George' not found or empty. Headers seen:", headerRaw);
+  }
+
+  return mapped;
     }
 
     // OPTIONAL: fallback list if CSV is missing
@@ -260,6 +318,12 @@ function dismissKeyboard() {
         pg.appendChild(none);
       }
 
+// Message From Annie & George
+const msgBox = document.getElementById('detailMessage');
+msgBox.textContent = g.message && g.message.trim()
+  ? g.message.trim()
+  : "We’re so grateful to have you here to celebrate our special day. Enjoy the evening!";
+
       // Tablemates list (vertical) — names only, no photo group
       const list = $("#matesList"); list.innerHTML = "";
       const mates = GUESTS
@@ -303,40 +367,53 @@ function dismissKeyboard() {
     }
     $("#search").addEventListener('input', debounce(onSearchInput, 120));
 
-    function applyFilter(q){
-      const nq = norm(q);
+function applyFilter(q){
+  const nq = norm(q);
 
-      if(!nq){
-        HAS_SEARCHED = false;
-        FILTERED = [];
-        LAST_OPENED = null;
-        const isOpen = $("#detail")?.classList.contains('open');
-        if(isOpen) closeDetail();
-        render();
-        return;
-      }
+  if (!nq) {
+    HAS_SEARCHED = false;
+    FILTERED = [];
+    render();
+    const isOpen = document.getElementById('detail')?.classList.contains('open');
+    if (isOpen) closeDetail();
+    LAST_OPENED = null;
+    return;
+  }
 
-      HAS_SEARCHED = true;
-      FILTERED = GUESTS.filter(g=>{
-        const hay = [g.name, g.table, g.photo_group].map(norm).join(" ");
-        return nq.split(" ").every(tok=> hay.includes(tok));
-      });
+  HAS_SEARCHED = true;
 
-      render();
+  // Filter only by names
+  FILTERED = GUESTS.filter(g => {
+    const nameHay = norm(g.name);
+    return nq.split(" ").every(tok => nameHay.split(" ").some(part => part.startsWith(tok)));
+  });
 
-      // Auto-open when there's exactly one match
-      if(FILTERED.length === 1){
-        const only = FILTERED[0];
-        if(LAST_OPENED !== only.id){
-          LAST_OPENED = only.id;
-          setTimeout(()=> openDetail(only.id), 120);
-        }
-      }else{
-        const isOpen = $("#detail")?.classList.contains('open');
-        if(isOpen) closeDetail();
-        LAST_OPENED = null;
-      }
+  // 🔑 Sort so that matches in the first name come first
+  FILTERED.sort((a, b) => {
+    const [aFirst, ...aRest] = a.name.split(" ");
+    const [bFirst, ...bRest] = b.name.split(" ");
+    const aFirstMatch = norm(aFirst).startsWith(nq);
+    const bFirstMatch = norm(bFirst).startsWith(nq);
+
+    if (aFirstMatch && !bFirstMatch) return -1;
+    if (!aFirstMatch && bFirstMatch) return 1;
+    return a.name.localeCompare(b.name);
+  });
+
+  render();
+
+  if (FILTERED.length === 1) {
+    const only = FILTERED[0];
+    if (LAST_OPENED !== only.id) {
+      LAST_OPENED = only.id;
+      setTimeout(() => openDetail(only.id), 120);
     }
+  } else {
+    const isOpen = document.getElementById('detail')?.classList.contains('open');
+    if (isOpen) closeDetail();
+    LAST_OPENED = null;
+  }
+}
 
     // --- Loaders ---
     function loadGuests(items){
