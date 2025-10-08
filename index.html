@@ -606,6 +606,8 @@ document.addEventListener('DOMContentLoaded', function() {
   if (closeBtn) {
     closeBtn.addEventListener('click', function() {
       closeDetail();
+
+      document.getElementById('closeDetail').onclick = closeDetail
     });
   }
 });
