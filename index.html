@@ -473,7 +473,8 @@ function openDetail(id){
   history.pushState({ modal: 'detail', token }, '');
 }
 
-function closeDetail({ fromPopstate = false } = {}){
+ffunction closeDetail(arg) {
+  var fromPopstate = arg && arg.fromPopstate ? arg.fromPopstate : false;
   const detailEl = document.getElementById('detail');
   if (!detailEl.classList.contains('open')) return;
 
@@ -489,7 +490,6 @@ function closeDetail({ fromPopstate = false } = {}){
     }
   }
 }
-
     // --- Search ---
     async function onSearchInput(e){
       const s = $("#status");
@@ -600,12 +600,15 @@ window.addEventListener('popstate', () => {
   const detailEl = document.getElementById('detail');
   if (detailEl && detailEl.classList.contains('open')) {
     closeDetail({ fromPopstate: true });
-   // Attach the event listener after the DOM is loaded
-  document.addEventListener('DOMContentLoaded', function() {
-    var closeBtn = document.getElementById('closeDetail');
-    if (closeBtn) {
-      closeBtn.addEventListener('click', function() {
-        closeDetail();
+    // Attach the close event after DOM is ready
+document.addEventListener('DOMContentLoaded', function() {
+  var closeBtn = document.getElementById('closeDetail');
+  if (closeBtn) {
+    closeBtn.addEventListener('click', function() {
+      closeDetail();
+    });
+  }
+});
       });
     }
   });
