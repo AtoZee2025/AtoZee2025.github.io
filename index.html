@@ -589,17 +589,19 @@ function applyFilter(q){
     return url;
   }
 </script>
+<script>
 // Ensure first Back doesn't exit the page immediately
 if (!history.state || !history.state.__base) {
   history.replaceState({ __base: true }, '');
 }
+
 // Back button: if modal is open, close it instead of leaving the page
 window.addEventListener('popstate', () => {
   const detailEl = document.getElementById('detail');
-  if (detailEl.classList.contains('open')) {
+  if (detailEl && detailEl.classList.contains('open')) {
     closeDetail({ fromPopstate: true });
   }
 });
-  
+</script>
 </body>
 </html>
