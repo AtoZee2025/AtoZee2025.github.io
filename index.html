@@ -91,7 +91,53 @@ url("DATA:IMAGE/PNG;BASE64,iVBORw0KGgoAAAANSUhEUgAAA7wAAALiCAYAAAD6sNoEAAAAAXNSR
 #guest-panel .section {
   overflow-x: hidden;
 }
+/* Kill horizontal scroll everywhere by default */
+html, body {
+  overflow-x: hidden;
+  overscroll-behavior-x: none;       /* block sideways bounce */
+}
 
+/* Panel = vertical-only scroll area */
+#guest-panel {
+  overflow-y: auto;
+  overflow-x: hidden;
+
+  touch-action: pan-y;               /* allow only vertical gestures */
+  overscroll-behavior-x: none;       /* no sideways bounce inside */
+  -webkit-overflow-scrolling: touch; /* smooth iOS scroll */
+}
+
+/* Make sure descendants never force x-overflow */
+#guest-panel * {
+  max-width: 100%;
+  overflow-wrap: break-word;
+  word-break: break-word;
+}
+
+/* Common culprits that cause overflow */
+#guest-panel img,
+#guest-panel video,
+#guest-panel svg,
+#guest-panel canvas {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* If you have rows/grids inside the panel, clip x there too */
+#guest-panel .row,
+#guest-panel .grid,
+#guest-panel .section,
+#guest-panel .content {
+  overflow-x: hidden;
+}
+
+/* Avoid 100vw causing overflow on mobile (scrollbar math) */
+#guest-panel [style*="width: 100vw"], 
+#guest-panel .w-100vw {
+  width: 100% !important;
+}
+  
 </style>
 
   <style>
