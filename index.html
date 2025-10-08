@@ -52,89 +52,56 @@ url("DATA:IMAGE/PNG;BASE64,iVBORw0KGgoAAAANSUhEUgAAA7wAAALiCAYAAAD6sNoEAAAAAXNSR
 @media (prefers-reduced-motion: reduce) {
   .sheet.halo::before { animation: none; opacity: .2; }
 }
-/* === POP-OUT PANEL: vertical-only scrolling === */
-#guest-panel {
-  position: fixed;
-  top: 0;
-  right: 0;
-  width: min(100%, 420px);
-  height: 100dvh;
-  background: #fff;
-  box-shadow: -2px 0 12px rgba(0,0,0,.15);
-  transform: translateX(100%);
-  transition: transform .3s ease;
-  z-index: 1000;
-
-  /* ✅ only vertical scrolling allowed */
-  overflow-y: auto;
-  overflow-x: hidden;
-
-  /* ✅ touch gesture control */
-  touch-action: pan-y;             /* only allow vertical gestures */
-  overscroll-behavior-x: none;     /* block sideways overscroll bounce */
-  -webkit-overflow-scrolling: touch; /* smooth iOS scroll */
-}
-
-/* Slide in when open */
-#guest-panel.open {
-  transform: translateX(0);
-}
-
-/* ✅ prevent any internal elements from forcing horizontal scroll */
-#guest-panel * {
-  max-width: 100%;
-  overflow-wrap: break-word;
-  word-break: break-word;
-}
-  #guest-panel .row,
-#guest-panel .grid,
-#guest-panel .section {
-  overflow-x: hidden;
-}
-/* Kill horizontal scroll everywhere by default */
+/* Background page: no horizontal overflow */
 html, body {
   overflow-x: hidden;
-  overscroll-behavior-x: none;       /* block sideways bounce */
+  overscroll-behavior-x: none;
 }
 
-/* Panel = vertical-only scroll area */
-#guest-panel {
-  overflow-y: auto;
-  overflow-x: hidden;
-
-  touch-action: pan-y;               /* allow only vertical gestures */
-  overscroll-behavior-x: none;       /* no sideways bounce inside */
-  -webkit-overflow-scrolling: touch; /* smooth iOS scroll */
+/* Lock background scroll when the modal is open */
+body.lock-scroll {
+  overflow: hidden;
+  height: 100%;
 }
 
-/* Make sure descendants never force x-overflow */
-#guest-panel * {
+/* The scroll container INSIDE the pop-out */
+.detail .sheet {
+  /* already has max-height:90vh and overflow:auto in your CSS */
+  overflow-y: auto;        /* vertical scrolling */
+  overflow-x: hidden;      /* 🚫 no horizontal scroll */
+  touch-action: pan-y;     /* 🚫 only vertical gestures */
+  overscroll-behavior-x: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Ensure nothing inside can force horizontal overflow */
+.detail .sheet * {
   max-width: 100%;
   overflow-wrap: break-word;
   word-break: break-word;
 }
 
-/* Common culprits that cause overflow */
-#guest-panel img,
-#guest-panel video,
-#guest-panel svg,
-#guest-panel canvas {
+/* Common culprits inside the sheet */
+.detail .sheet img,
+.detail .sheet video,
+.detail .sheet svg,
+.detail .sheet canvas {
   max-width: 100%;
   height: auto;
   display: block;
 }
 
-/* If you have rows/grids inside the panel, clip x there too */
-#guest-panel .row,
-#guest-panel .grid,
-#guest-panel .section,
-#guest-panel .content {
+/* If any internal rows/grids exist, clip their X overflow too */
+.detail .sheet .row,
+.detail .sheet .grid,
+.detail .sheet .section,
+.detail .sheet .content {
   overflow-x: hidden;
 }
 
-/* Avoid 100vw causing overflow on mobile (scrollbar math) */
-#guest-panel [style*="width: 100vw"], 
-#guest-panel .w-100vw {
+/* Avoid 100vw inside the sheet (causes side scroll on mobile) */
+.detail .sheet [style*="width: 100vw"],
+.detail .sheet .w-100vw {
   width: 100% !important;
 }
   
