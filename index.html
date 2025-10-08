@@ -603,5 +603,55 @@ window.addEventListener('popstate', () => {
   }
 });
 </script>
+  <script>
+// --- Ensure a base history state exists (do this once on load)
+if (!history.state || !history.state.__base) {
+  history.replaceState({ __base: true }, '');
+}
+
+// --- OPEN: push a modal state so Back/X can consume it
+function openDetail(id){
+  // ... your existing setup code for content ...
+
+  const detailEl = document.getElementById('detail');
+  if (detailEl.classList.contains('open')) return;
+
+  detailEl.classList.add('open');
+  document.body.classList.add('lock-scroll');
+
+  // push a state for the modal
+  const token = 'detail-' + Date.now();
+  detailEl.dataset.histoken = token;
+  history.pushState({ modal: 'detail', token }, '');
+}
+
+// --- CLOSE: only call back() if we actually have a modal state on top
+function closeDetail({ fromPopstate = false } = {}){
+  const detailEl = document.getElementById('detail');
+  if (!detailEl.classList.contains('open')) return;
+
+  detailEl.classList.remove('open');
+  document.body.classList.remove('lock-scroll');
+
+  // If user clicked "X" (not Back), consume our pushed modal state
+  if (!fromPopstate && history.state && history.state.modal === 'detail') {
+    history.back();
+  }
+}
+
+// --- Back button: if modal is open, close it (and don't navigate yet)
+window.addEventListener('popstate', () => {
+  const detailEl = document.getElementById('detail');
+  if (detailEl.classList.contains('open')) {
+    closeDetail({ fromPopstate: true });
+  }
+});
+
+// --- Wire the X button and backdrop (ensure this runs after DOM exists)
+document.getElementById('closeDetail')?.addEventListener('click', () => closeDetail());
+document.getElementById('detail')?.addEventListener('click', (e) => {
+  if (e.target.id === 'detail') closeDetail(); // backdrop click
+});
+</script>
 </body>
 </html>
