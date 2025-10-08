@@ -52,6 +52,40 @@ url("DATA:IMAGE/PNG;BASE64,iVBORw0KGgoAAAANSUhEUgAAA7wAAALiCAYAAAD6sNoEAAAAAXNSR
 @media (prefers-reduced-motion: reduce) {
   .sheet.halo::before { animation: none; opacity: .2; }
 }
+/* === POP-OUT PANEL: vertical-only scrolling === */
+#guest-panel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: min(100%, 420px);
+  height: 100dvh;
+  background: #fff;
+  box-shadow: -2px 0 12px rgba(0,0,0,.15);
+  transform: translateX(100%);
+  transition: transform .3s ease;
+  z-index: 1000;
+
+  /* ✅ only vertical scrolling allowed */
+  overflow-y: auto;
+  overflow-x: hidden;
+
+  /* ✅ touch gesture control */
+  touch-action: pan-y;             /* only allow vertical gestures */
+  overscroll-behavior-x: none;     /* block sideways overscroll bounce */
+  -webkit-overflow-scrolling: touch; /* smooth iOS scroll */
+}
+
+/* Slide in when open */
+#guest-panel.open {
+  transform: translateX(0);
+}
+
+/* ✅ prevent any internal elements from forcing horizontal scroll */
+#guest-panel * {
+  max-width: 100%;
+  overflow-wrap: break-word;
+  word-break: break-word;
+}
   
 </style>
 
