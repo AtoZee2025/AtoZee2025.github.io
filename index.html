@@ -74,6 +74,51 @@ url("DATA:IMAGE/PNG;BASE64,iVBORw0KGgoAAAANSUhEUgAAA7wAAALiCAYAAAD6sNoEAAAAAXNSR
   <!-- your guest info goes here -->
   <button id="close-panel">Close</button>
 </aside>
+
+/* Pop-out: vertical scroll only; no sideways drag */
+#guest-panel {
+  position: fixed;
+  top: 0; right: 0;
+  width: min(100%, 420px);        /* avoids 100vw overflow issues */
+  height: 100dvh;                 /* full viewport height */
+  background: #fff;
+  box-shadow: -2px 0 12px rgba(0,0,0,.15);
+  transform: translateX(100%);
+  transition: transform .3s ease;
+  z-index: 1000;
+
+  /* vertical-only behavior */
+  overflow-y: auto;
+  overflow-x: hidden;
+  touch-action: pan-y;
+  overscroll-behavior-x: none;
+  -webkit-overflow-scrolling: touch; /* iOS momentum scroll */
+}
+
+#guest-panel.open {
+  transform: translateX(0);
+}
+
+/* Make sure panel content can't cause horizontal overflow */
+#guest-panel * {
+  max-width: 100%;
+  overflow-wrap: break-word;      /* wrap long names/emails */
+  word-break: break-word;
+}
+
+/* If you have rows/containers inside panel, clip their X overflow too */
+#guest-panel .row,
+#guest-panel .section,
+#guest-panel .content {
+  overflow-x: hidden;
+}
+
+/* Global helpers (if not added yet) */
+html, body { overflow-x: hidden; }
+body, .main-scroll, [data-scroll] {
+  touch-action: pan-y;
+  overscroll-behavior-x: none;
+}
   
 </style>
 
@@ -549,41 +594,89 @@ function applyFilter(q){
     return url;
   }
 
+  // --- Query your panel + close button ---
+  const panel = document.getElementById('guest-panel');
+  const closeBtn = document.getElementById('close-panel');
+
+  // Ensure a base state exists so first Back doesn't instantly leave the page
+  if (!history.state || !history.state.__base) {
+    history.replaceState({ __base: true }, '');
+  }
+
+  // Helper: update ?guest= param for deep-links (optional)
+  function setGuestParam(guestId) {
+    const url = new URL(location.href);
+    if (guestId) url.searchParams.set('guest', guestId);
+    else url.searchParams.delete('guest');
+    return url;
+  }
+
   function openPanel(guestId) {
+    if (!panel) return;
     if (panel.classList.contains('open')) return;
+
+    // Lock body scroll when panel is open
+    document.documentElement.style.overflow = 'hidden';
+    document.body.style.overflow = 'hidden';
+
     panel.classList.add('open');
     panel.setAttribute('aria-hidden', 'false');
+
+    // Push a modal state so Back closes the panel first
     const token = 'panel-' + Date.now();
     panel.dataset.histoken = token;
     const url = setGuestParam(guestId);
-    history.pushState({ panel: true, token }, '', url);
+    history.pushState({ __modal: 'guest', token }, '', url);
   }
 
   function closePanel({ fromPopstate = false } = {}) {
-    if (!panel.classList.contains('open')) return;
+    if (!panel || !panel.classList.contains('open')) return;
+
     panel.classList.remove('open');
     panel.setAttribute('aria-hidden', 'true');
+
+    // Restore body scroll
+    document.documentElement.style.overflow = '';
+    document.body.style.overflow = '';
+
+    // Clean URL without adding another entry
     const url = setGuestParam(null);
-    history.replaceState(history.state, '', url);
+    history.replaceState(history.state && history.state.__base ? history.state : { __base: true }, '', url);
+
+    // If we initiated the close (not Back), consume the modal history entry
     if (!fromPopstate) {
-      const s = history.state;
-      if (s && s.panel && s.token === panel.dataset.histoken) {
-        history.back();
-      }
+      history.back();
     }
   }
 
+  // Intercept Back: if panel open, close it instead of navigating away
   window.addEventListener('popstate', (e) => {
-    if (panel.classList.contains('open')) {
+    if (panel && panel.classList.contains('open')) {
+      // Close but don't call history.back() again
       closePanel({ fromPopstate: true });
+      return;
+    }
+    // Otherwise let the browser go back normally (e.g., from deep link)
+  });
+
+  // Wire up close button (if present)
+  closeBtn?.addEventListener('click', () => closePanel());
+
+  // Example: open on any element with data-open-guest (optional)
+  document.addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-open-guest]');
+    if (btn) {
+      openPanel(btn.getAttribute('data-open-guest') || '');
     }
   });
 
-  document.addEventListener('click', (e) => {
-    const btn = e.target.closest('[data-open-guest]');
-    if (btn) openPanel(btn.getAttribute('data-open-guest'));
-  });
-  closeBtn?.addEventListener('click', () => closePanel());
+  // Optional: deep-link support (?guest=123 opens on load)
+  (function initFromURL() {
+    const guest = new URL(location.href).searchParams.get('guest');
+    if (guest) openPanel(guest);
+  })();
+</script>
+
 </script>
 
 </body>
