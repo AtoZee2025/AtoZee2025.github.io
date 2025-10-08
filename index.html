@@ -52,59 +52,28 @@ url("DATA:IMAGE/PNG;BASE64,iVBORw0KGgoAAAANSUhEUgAAA7wAAALiCAYAAAD6sNoEAAAAAXNSR
 @media (prefers-reduced-motion: reduce) {
   .sheet.halo::before { animation: none; opacity: .2; }
 }
-/* Background page: no horizontal overflow */
-html, body {
+/* Kill horizontal scroll globally */
+html, body { overflow-x: hidden; height: 100%; }
+
+/* Allow only vertical panning/scroll gestures */
+body, .main-scroll, [data-scroll] {
+  touch-action: pan-y;             /* modern browsers incl. iOS 13+ */
+  overscroll-behavior-x: none;     /* stop sideways overscroll */
+}
+
+/* If any custom scroll areas exist, make them vertical-only too */
+.scroll-y-only {
+  overflow-y: auto;
   overflow-x: hidden;
+  touch-action: pan-y;
   overscroll-behavior-x: none;
 }
 
-/* Lock background scroll when the modal is open */
-body.lock-scroll {
-  overflow: hidden;
-  height: 100%;
-}
+/* Common culprits that cause horizontal overflow */
+img, video, canvas, svg { max-width: 100%; height: auto; }
+* { box-sizing: border-box; }
 
-/* The scroll container INSIDE the pop-out */
-.detail .sheet {
-  /* already has max-height:90vh and overflow:auto in your CSS */
-  overflow-y: auto;        /* vertical scrolling */
-  overflow-x: hidden;      /* 🚫 no horizontal scroll */
-  touch-action: pan-y;     /* 🚫 only vertical gestures */
-  overscroll-behavior-x: none;
-  -webkit-overflow-scrolling: touch;
-}
 
-/* Ensure nothing inside can force horizontal overflow */
-.detail .sheet * {
-  max-width: 100%;
-  overflow-wrap: break-word;
-  word-break: break-word;
-}
-
-/* Common culprits inside the sheet */
-.detail .sheet img,
-.detail .sheet video,
-.detail .sheet svg,
-.detail .sheet canvas {
-  max-width: 100%;
-  height: auto;
-  display: block;
-}
-
-/* If any internal rows/grids exist, clip their X overflow too */
-.detail .sheet .row,
-.detail .sheet .grid,
-.detail .sheet .section,
-.detail .sheet .content {
-  overflow-x: hidden;
-}
-
-/* Avoid 100vw inside the sheet (causes side scroll on mobile) */
-.detail .sheet [style*="width: 100vw"],
-.detail .sheet .w-100vw {
-  width: 100% !important;
-}
-  
 </style>
 
   <style>
@@ -229,7 +198,7 @@ h1.seat-title {
 
       <div class="footer">
         <div class="hint" style="margin-top:8px">
-          From Annie & George: Thank you for celebrating with us today! 💞 
+          From Annie & George: Thank you for joining us on our special day! 💞 
         </div>
       </div>
     </div>
@@ -416,79 +385,69 @@ function csvToGuests(text){
       });
     }
 
-function openDetail(id){
-  // Prevent double-push if already open
-  const detailEl = document.getElementById('detail');
-  if (detailEl.classList.contains('open')) return;
+    // --- Detail modal ---
+    function openDetail(id){
+      dismissKeyboard();          
+      const g = GUESTS.find(x=>x.id===id); if(!g) return;
+      $("#detailTitle").textContent = g.name;
+      $("#detailSub").textContent = ""; // we won't repeat photo group here
+      $("#detailTable").textContent = g.table || "Unassigned";
 
-  dismissKeyboard();
-  const g = GUESTS.find(x=>x.id===id); if(!g) return;
+      // Chips (table only, keep it simple)
+      const chips = $("#detailChips"); chips.innerHTML = "";
+      if (chips) chips.innerHTML = "";
+      const chip = (t)=>{ const s=document.createElement('span'); s.className='chip'; s.textContent=t; return s; };
+      // if(g.table) chips.appendChild(chip(g.table));
 
-  // ----- your existing content setup (unchanged) -----
-  $("#detailTitle").textContent = g.name;
-  $("#detailSub").textContent = "";
-  $("#detailTable").textContent = g.table || "Unassigned";
-  const chips = $("#detailChips"); if (chips) chips.innerHTML = "";
-  const chip = (t)=>{ const s=document.createElement('span'); s.className='chip'; s.textContent=t; return s; };
+      // Dedicated Photo Group section
+      const pg = $("#detailPhotoGroup"); pg.innerHTML = "";
+      if (g.photo_group){
+        pg.appendChild(chip(g.photo_group));
+      } else {
+        const none = document.createElement('span');
+        none.className = 'chip';
+        none.textContent = "—";
+        pg.appendChild(none);
+      }
 
-  const pg = $("#detailPhotoGroup"); pg.innerHTML = "";
-  if (g.photo_group){ pg.appendChild(chip(g.photo_group)); }
-  else { const none=document.createElement('span'); none.className='chip'; none.textContent='—'; pg.appendChild(none); }
+// Message From Annie & George
+const msgBox = document.getElementById('detailMessage');
+msgBox.textContent = g.message && g.message.trim()
+  ? g.message.trim()
+  : "We’re so grateful to have you here to celebrate our special day. Enjoy the evening!";
 
-  const msgBox = document.getElementById('detailMessage');
-  msgBox.textContent = g.message && g.message.trim()
-    ? g.message.trim()
-    : "We’re so grateful to have you here to celebrate our special day. Enjoy the evening!";
+      // Tablemates list (vertical) — names only, no photo group
+      const list = $("#matesList"); list.innerHTML = "";
+      const mates = GUESTS
+        .filter(x => norm(x.table) === norm(g.table) && norm(x.name) !== norm(g.name))
+        .sort((a,b)=> a.name.localeCompare(b.name));
 
-  const list = $("#matesList"); list.innerHTML = "";
-  const mates = GUESTS.filter(x => norm(x.table) === norm(g.table) && norm(x.name) !== norm(g.name))
-                      .sort((a,b)=> a.name.localeCompare(b.name));
-  if(mates.length){
-    mates.forEach(m => {
-      const li = document.createElement('li');
-      li.className = 'mateRow';
-      const nm = document.createElement('div'); nm.className='mateName'; nm.textContent = m.name;
-      li.appendChild(nm);
-      list.appendChild(li);
-    });
-  } else {
-    const li = document.createElement('li');
-    li.className = 'mateRow';
-    const nm = document.createElement('div'); nm.className='meta';
-    nm.textContent = "No other guests listed at this table yet.";
-    li.appendChild(nm);
-    list.appendChild(li);
-  }
+      if(mates.length){
+        mates.forEach(m => {
+          const li = document.createElement('li');
+          li.className = 'mateRow';
+          const nm = document.createElement('div'); nm.className='mateName'; nm.textContent = m.name;
+          li.appendChild(nm);
+          list.appendChild(li);
+        });
+      }else{
+        const li = document.createElement('li');
+        li.className = 'mateRow';
+        const nm = document.createElement('div'); nm.className='meta';
+        nm.textContent = "No other guests listed at this table yet.";
+        li.appendChild(nm);
+        list.appendChild(li);
+      }
+  // 🔆 Add halo animation
   const sheetEl = document.querySelector('.sheet');
-  sheetEl.classList.remove('halo'); void sheetEl.offsetWidth; sheetEl.classList.add('halo');
-  // ----- end of your existing content setup -----
-
-  // Open + lock background scroll
-  detailEl.classList.add('open');
-  document.body.classList.add('lock-scroll');
-
-  // Push a modal history step so Back closes this first
-  const token = 'detail-' + Date.now();
-  detailEl.dataset.histoken = token;
-  history.pushState({ modal: 'detail', token }, '');
-}
-
-function closeDetail({ fromPopstate = false } = {}){
-  const detailEl = document.getElementById('detail');
-  if (!detailEl.classList.contains('open')) return;
-
-  // Close + restore background scroll
-  detailEl.classList.remove('open');
-  document.body.classList.remove('lock-scroll');
-
-  // If we initiated the close (not Back), consume the modal entry
-  if (!fromPopstate) {
-    const s = history.state;
-    if (s && s.modal === 'detail' && s.token === detailEl.dataset.histoken) {
-      history.back();
+  sheetEl.classList.remove('halo');
+  void sheetEl.offsetWidth;
+  sheetEl.classList.add('halo');
+      $("#detail").classList.add('open');
     }
-  }
-}
+    function closeDetail(){ $("#detail").classList.remove('open'); }
+    $("#closeDetail").onclick = closeDetail;
+    $("#detail").addEventListener('click', (e)=>{ if(e.target.id==="detail") closeDetail(); });
 
     // --- Search ---
     async function onSearchInput(e){
@@ -578,80 +537,6 @@ function applyFilter(q){
       if(EMBEDDED.length){ loadGuests(EMBEDDED); }
       setTimeout(()=> $("#search").focus(), 300);
     })();
-
-  const panel = document.getElementById('guest-panel');
-  const closeBtn = document.getElementById('close-panel');
-
-  function setGuestParam(guestId) {
-    const url = new URL(location.href);
-    if (guestId) url.searchParams.set('guest', guestId);
-    else url.searchParams.delete('guest');
-    return url;
-  }
-</script>
-<script>
-// Ensure first Back doesn't exit the page immediately
-if (!history.state || !history.state.__base) {
-  history.replaceState({ __base: true }, '');
-}
-
-// Back button: if modal is open, close it instead of leaving the page
-window.addEventListener('popstate', () => {
-  const detailEl = document.getElementById('detail');
-  if (detailEl && detailEl.classList.contains('open')) {
-    closeDetail({ fromPopstate: true });
-  }
-});
-</script>
-  <script>
-// --- Ensure a base history state exists (do this once on load)
-if (!history.state || !history.state.__base) {
-  history.replaceState({ __base: true }, '');
-}
-
-// --- OPEN: push a modal state so Back/X can consume it
-function openDetail(id){
-  // ... your existing setup code for content ...
-
-  const detailEl = document.getElementById('detail');
-  if (detailEl.classList.contains('open')) return;
-
-  detailEl.classList.add('open');
-  document.body.classList.add('lock-scroll');
-
-  // push a state for the modal
-  const token = 'detail-' + Date.now();
-  detailEl.dataset.histoken = token;
-  history.pushState({ modal: 'detail', token }, '');
-}
-
-// --- CLOSE: only call back() if we actually have a modal state on top
-function closeDetail({ fromPopstate = false } = {}){
-  const detailEl = document.getElementById('detail');
-  if (!detailEl.classList.contains('open')) return;
-
-  detailEl.classList.remove('open');
-  document.body.classList.remove('lock-scroll');
-
-  // If user clicked "X" (not Back), consume our pushed modal state
-  if (!fromPopstate && history.state && history.state.modal === 'detail') {
-    history.back();
-  }
-}
-
-// --- Back button: if modal is open, close it (and don't navigate yet)
-window.addEventListener('popstate', () => {
-  const detailEl = document.getElementById('detail');
-  if (detailEl.classList.contains('open')) {
-    closeDetail({ fromPopstate: true });
-  }
-});
-
-// --- Wire the X button and backdrop (ensure this runs after DOM exists)
-document.getElementById('closeDetail')?.addEventListener('click', () => closeDetail());
-document.getElementById('detail')?.addEventListener('click', (e) => {
-  if (e.target.id === 'detail') closeDetail(); // backdrop click
-});
-</script>
+  </script>
 </body>
 </html>
