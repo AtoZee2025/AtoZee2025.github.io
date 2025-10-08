@@ -52,6 +52,26 @@ url("DATA:IMAGE/PNG;BASE64,iVBORw0KGgoAAAANSUhEUgAAA7wAAALiCAYAAAD6sNoEAAAAAXNSR
 @media (prefers-reduced-motion: reduce) {
   .sheet.halo::before { animation: none; opacity: .2; }
 }
+/* Kill horizontal scroll globally */
+html, body { overflow-x: hidden; height: 100%; }
+
+/* Allow only vertical panning/scroll gestures */
+body, .main-scroll, [data-scroll] {
+  touch-action: pan-y;             /* modern browsers incl. iOS 13+ */
+  overscroll-behavior-x: none;     /* stop sideways overscroll */
+}
+
+/* If any custom scroll areas exist, make them vertical-only too */
+.scroll-y-only {
+  overflow-y: auto;
+  overflow-x: hidden;
+  touch-action: pan-y;
+  overscroll-behavior-x: none;
+}
+
+/* Common culprits that cause horizontal overflow */
+img, video, canvas, svg { max-width: 100%; height: auto; }
+* { box-sizing: border-box; }
 
 
 </style>
