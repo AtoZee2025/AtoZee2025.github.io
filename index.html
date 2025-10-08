@@ -209,7 +209,9 @@ h1.seat-title {
 <!-- Hero banner -->
 <header class="hero-bg"></header>
   <div class="container">
-    <div class="app" role="application" aria-label="Wedding seating chart">
+  <div class="main-grid">
+    <!-- LEFT: Finder -->
+    <div class="app finder" role="application" aria-label="Wedding seating chart">
       <header>
         <div class="brand">
           <div>
@@ -227,11 +229,24 @@ h1.seat-title {
 
       <div class="footer">
         <div class="hint" style="margin-top:8px">
-          From Annie & George: Thank you for celebrating with us today! 💞 
+          From Annie &amp; George: Thank you for celebrating with us today! 💞
         </div>
       </div>
     </div>
+
+    <!-- RIGHT: Agenda (Eastern Time) -->
+    <aside class="app agenda" aria-labelledby="agendaTitle">
+      <header class="agenda-head">
+        <h2 id="agendaTitle">Agenda (ET)</h2>
+        <div class="agenda-now" id="agendaNow" aria-live="polite"></div>
+      </header>
+
+      <ul class="agenda-list" id="agendaList" role="list"></ul>
+
+      <div class="agenda-next" id="agendaNext" aria-live="polite"></div>
+    </aside>
   </div>
+</div>
 
   <div class="detail" id="detail" role="dialog" aria-modal="true" aria-labelledby="detailTitle">
     <div class="sheet">
