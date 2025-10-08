@@ -416,69 +416,79 @@ function csvToGuests(text){
       });
     }
 
-    // --- Detail modal ---
-    function openDetail(id){
-      dismissKeyboard();          
-      const g = GUESTS.find(x=>x.id===id); if(!g) return;
-      $("#detailTitle").textContent = g.name;
-      $("#detailSub").textContent = ""; // we won't repeat photo group here
-      $("#detailTable").textContent = g.table || "Unassigned";
+function openDetail(id){
+  // Prevent double-push if already open
+  const detailEl = document.getElementById('detail');
+  if (detailEl.classList.contains('open')) return;
 
-      // Chips (table only, keep it simple)
-      const chips = $("#detailChips"); chips.innerHTML = "";
-      if (chips) chips.innerHTML = "";
-      const chip = (t)=>{ const s=document.createElement('span'); s.className='chip'; s.textContent=t; return s; };
-      // if(g.table) chips.appendChild(chip(g.table));
+  dismissKeyboard();
+  const g = GUESTS.find(x=>x.id===id); if(!g) return;
 
-      // Dedicated Photo Group section
-      const pg = $("#detailPhotoGroup"); pg.innerHTML = "";
-      if (g.photo_group){
-        pg.appendChild(chip(g.photo_group));
-      } else {
-        const none = document.createElement('span');
-        none.className = 'chip';
-        none.textContent = "—";
-        pg.appendChild(none);
-      }
+  // ----- your existing content setup (unchanged) -----
+  $("#detailTitle").textContent = g.name;
+  $("#detailSub").textContent = "";
+  $("#detailTable").textContent = g.table || "Unassigned";
+  const chips = $("#detailChips"); if (chips) chips.innerHTML = "";
+  const chip = (t)=>{ const s=document.createElement('span'); s.className='chip'; s.textContent=t; return s; };
 
-// Message From Annie & George
-const msgBox = document.getElementById('detailMessage');
-msgBox.textContent = g.message && g.message.trim()
-  ? g.message.trim()
-  : "We’re so grateful to have you here to celebrate our special day. Enjoy the evening!";
+  const pg = $("#detailPhotoGroup"); pg.innerHTML = "";
+  if (g.photo_group){ pg.appendChild(chip(g.photo_group)); }
+  else { const none=document.createElement('span'); none.className='chip'; none.textContent='—'; pg.appendChild(none); }
 
-      // Tablemates list (vertical) — names only, no photo group
-      const list = $("#matesList"); list.innerHTML = "";
-      const mates = GUESTS
-        .filter(x => norm(x.table) === norm(g.table) && norm(x.name) !== norm(g.name))
-        .sort((a,b)=> a.name.localeCompare(b.name));
+  const msgBox = document.getElementById('detailMessage');
+  msgBox.textContent = g.message && g.message.trim()
+    ? g.message.trim()
+    : "We’re so grateful to have you here to celebrate our special day. Enjoy the evening!";
 
-      if(mates.length){
-        mates.forEach(m => {
-          const li = document.createElement('li');
-          li.className = 'mateRow';
-          const nm = document.createElement('div'); nm.className='mateName'; nm.textContent = m.name;
-          li.appendChild(nm);
-          list.appendChild(li);
-        });
-      }else{
-        const li = document.createElement('li');
-        li.className = 'mateRow';
-        const nm = document.createElement('div'); nm.className='meta';
-        nm.textContent = "No other guests listed at this table yet.";
-        li.appendChild(nm);
-        list.appendChild(li);
-      }
-  // 🔆 Add halo animation
+  const list = $("#matesList"); list.innerHTML = "";
+  const mates = GUESTS.filter(x => norm(x.table) === norm(g.table) && norm(x.name) !== norm(g.name))
+                      .sort((a,b)=> a.name.localeCompare(b.name));
+  if(mates.length){
+    mates.forEach(m => {
+      const li = document.createElement('li');
+      li.className = 'mateRow';
+      const nm = document.createElement('div'); nm.className='mateName'; nm.textContent = m.name;
+      li.appendChild(nm);
+      list.appendChild(li);
+    });
+  } else {
+    const li = document.createElement('li');
+    li.className = 'mateRow';
+    const nm = document.createElement('div'); nm.className='meta';
+    nm.textContent = "No other guests listed at this table yet.";
+    li.appendChild(nm);
+    list.appendChild(li);
+  }
   const sheetEl = document.querySelector('.sheet');
-  sheetEl.classList.remove('halo');
-  void sheetEl.offsetWidth;
-  sheetEl.classList.add('halo');
-      $("#detail").classList.add('open');
+  sheetEl.classList.remove('halo'); void sheetEl.offsetWidth; sheetEl.classList.add('halo');
+  // ----- end of your existing content setup -----
+
+  // Open + lock background scroll
+  detailEl.classList.add('open');
+  document.body.classList.add('lock-scroll');
+
+  // Push a modal history step so Back closes this first
+  const token = 'detail-' + Date.now();
+  detailEl.dataset.histoken = token;
+  history.pushState({ modal: 'detail', token }, '');
+}
+
+function closeDetail({ fromPopstate = false } = {}){
+  const detailEl = document.getElementById('detail');
+  if (!detailEl.classList.contains('open')) return;
+
+  // Close + restore background scroll
+  detailEl.classList.remove('open');
+  document.body.classList.remove('lock-scroll');
+
+  // If we initiated the close (not Back), consume the modal entry
+  if (!fromPopstate) {
+    const s = history.state;
+    if (s && s.modal === 'detail' && s.token === detailEl.dataset.histoken) {
+      history.back();
     }
-    function closeDetail(){ $("#detail").classList.remove('open'); }
-    $("#closeDetail").onclick = closeDetail;
-    $("#detail").addEventListener('click', (e)=>{ if(e.target.id==="detail") closeDetail(); });
+  }
+}
 
     // --- Search ---
     async function onSearchInput(e){
@@ -579,7 +589,17 @@ function applyFilter(q){
     return url;
   }
 </script>
-
+// Ensure first Back doesn't exit the page immediately
+if (!history.state || !history.state.__base) {
+  history.replaceState({ __base: true }, '');
+}
+// Back button: if modal is open, close it instead of leaving the page
+window.addEventListener('popstate', () => {
+  const detailEl = document.getElementById('detail');
+  if (detailEl.classList.contains('open')) {
+    closeDetail({ fromPopstate: true });
+  }
+});
   
 </body>
 </html>
