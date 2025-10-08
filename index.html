@@ -590,32 +590,39 @@ function applyFilter(q){
   }
 </script>
 <script>
-// Ensure first Back doesn't exit the page immediately
-if (!history.state || !history.state.__base) {
-  history.replaceState({ __base: true }, '');
-}
-
-// Back button: if modal is open, close it instead of leaving the page
-window.addEventListener('popstate', () => {
-  const detailEl = document.getElementById('detail');
-  if (detailEl && detailEl.classList.contains('open')) {
-    closeDetail({ fromPopstate: true });
-    // Attach the close event after DOM is ready
-document.addEventListener('DOMContentLoaded', function() {
-  var closeBtn = document.getElementById('closeDetail');
-  if (closeBtn) {
-    closeBtn.addEventListener('click', function() {
-      closeDetail();
-
-      document.getElementById('closeDetail').onclick = closeDetail
-    });
+  // Ensure first Back doesn't exit the page immediately
+  if (!history.state || !history.state.__base) {
+    history.replaceState({ __base: true }, '');
   }
-});
-      });
+
+  // Back button: if modal is open, close it instead of leaving the page
+  window.addEventListener('popstate', () => {
+    const detailEl = document.getElementById('detail');
+    if (detailEl && detailEl.classList.contains('open')) {
+      closeDetail({ fromPopstate: true });
     }
   });
+
+  // Wire up close interactions (✕ button, overlay click, Escape key)
+  const closeBtn = document.getElementById('closeDetail');
+  if (closeBtn) {
+    closeBtn.addEventListener('click', () => closeDetail());
   }
-});
+
+  const detailEl = document.getElementById('detail');
+  if (detailEl) {
+    // Click outside the sheet closes the modal
+    detailEl.addEventListener('click', (e) => {
+      if (e.target === detailEl) closeDetail();
+    });
+  }
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      const isOpen = document.getElementById('detail')?.classList.contains('open');
+      if (isOpen) closeDetail();
+    }
+  });
 </script>
 </body>
 </html>
