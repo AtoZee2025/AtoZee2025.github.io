@@ -677,6 +677,129 @@ function applyFilter(q){
     if (guest) openPanel(guest);
   })();
 </script>
+<script>
+/* =========================
+   0) ELEMENTS & SAFETY GUARDS
+   ========================= */
+const panel    = document.getElementById('guest-panel');   // your pop-out
+const closeBtn = document.getElementById('close-panel');   // close button inside pop-out
+const searchEl = document.getElementById('guest-search');  // the <input> guests type into
+
+// If the panel element is missing, stop here to avoid JS errors.
+if (panel) {
+  /* =========================
+     1) HISTORY / BACK BUTTON
+     ========================= */
+  // Ensure we have a base history state so first Back won't exit the page immediately
+  if (!history.state || !history.state.__base) {
+    history.replaceState({ __base: true }, '');
+  }
+
+  function setGuestParam(guestId) {
+    const url = new URL(location.href);
+    if (guestId) url.searchParams.set('guest', guestId);
+    else url.searchParams.delete('guest');
+    return url;
+  }
+
+  function openPanel(guestId) {
+    if (panel.classList.contains('open')) return;
+
+    // Lock body scroll while panel is open
+    document.documentElement.style.overflow = 'hidden';
+    document.body.style.overflow = 'hidden';
+
+    panel.classList.add('open');
+    panel.setAttribute('aria-hidden', 'false');
+
+    // Push a modal state so Back closes this first
+    const token = 'panel-' + Date.now();
+    panel.dataset.histoken = token;
+    const url = setGuestParam(guestId || '');
+    history.pushState({ __modal: 'guest', token }, '', url);
+  }
+
+  function closePanel({ fromPopstate = false } = {}) {
+    if (!panel.classList.contains('open')) return;
+
+    panel.classList.remove('open');
+    panel.setAttribute('aria-hidden', 'true');
+
+    // Restore body scroll
+    document.documentElement.style.overflow = '';
+    document.body.style.overflow = '';
+
+    // Remove ?guest without creating a new entry
+    const base = (history.state && history.state.__base) ? history.state : { __base: true };
+    const url = setGuestParam(null);
+    history.replaceState(base, '', url);
+
+    // If we initiated the close (not via Back), consume the pushed modal entry
+    if (!fromPopstate) history.back();
+  }
+
+  // Back button → close panel if open
+  window.addEventListener('popstate', () => {
+    if (panel.classList.contains('open')) {
+      closePanel({ fromPopstate: true });
+    }
+  });
+
+  // Close button
+  closeBtn && closeBtn.addEventListener('click', () => closePanel());
+
+  /* =========================
+     2) OPENING VIA TYPING A NAME
+     =========================
+     Choose one or both triggers:
+       A) Press Enter inside the search box -> openPanel with the typed name
+       B) Click a result item with [data-guest-id] -> openPanel with that id
+  */
+
+  // A) Press Enter in the search box to open the pop-out
+  if (searchEl) {
+    searchEl.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        const typed = searchEl.value.trim();
+        if (typed) {
+          // If you have a real guest list, you can validate the match here first.
+          openPanel(typed);
+          e.preventDefault();
+        }
+      }
+    });
+  }
+
+  // B) Click on any result carrying data-guest-id
+  document.addEventListener('click', (e) => {
+    const item = e.target.closest('[data-guest-id]');
+    if (item) {
+      const guestId = item.getAttribute('data-guest-id') || '';
+      openPanel(guestId);
+    }
+  });
+
+  /* =========================
+     3) OPTIONAL: DEEP LINKS
+     =========================
+     Visiting /page?guest=Alice auto-opens the panel.
+  */
+  (function initFromURL() {
+    const guest = new URL(location.href).searchParams.get('guest');
+    if (guest) openPanel(guest);
+  })();
+
+  /* =========================
+     4) DEBUG QUICK-TEST
+     =========================
+     In DevTools console, run:  openPanel('Test Guest')
+     It should open the panel immediately.
+  */
+  window.openPanel = openPanel;
+  window.closePanel = closePanel;
+}
+</script>
+
   
 </body>
 </html>
