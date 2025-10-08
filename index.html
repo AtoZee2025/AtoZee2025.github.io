@@ -602,7 +602,8 @@ function applyFilter(q){
   if (!history.state || !history.state.__base) {
     history.replaceState({ __base: true }, '');
   }
-
+    </script>
+<script>
   // Helper: update ?guest= param for deep-links (optional)
   function setGuestParam(guestId) {
     const url = new URL(location.href);
@@ -676,6 +677,6 @@ function applyFilter(q){
     if (guest) openPanel(guest);
   })();
 </script>
-
+  
 </body>
 </html>
