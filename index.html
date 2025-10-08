@@ -600,6 +600,8 @@ window.addEventListener('popstate', () => {
   const detailEl = document.getElementById('detail');
   if (detailEl && detailEl.classList.contains('open')) {
     closeDetail({ fromPopstate: true });
+    // Attach event handler to the close button
+  document.getElementById('closeDetail').addEventListener('click', () => closeDetail());
   }
 });
 </script>
