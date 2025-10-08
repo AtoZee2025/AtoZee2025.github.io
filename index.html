@@ -538,5 +538,53 @@ function applyFilter(q){
       setTimeout(()=> $("#search").focus(), 300);
     })();
   </script>
+  <script>
+  const panel = document.getElementById('guest-panel');
+  const closeBtn = document.getElementById('close-panel');
+
+  function setGuestParam(guestId) {
+    const url = new URL(location.href);
+    if (guestId) url.searchParams.set('guest', guestId);
+    else url.searchParams.delete('guest');
+    return url;
+  }
+
+  function openPanel(guestId) {
+    if (panel.classList.contains('open')) return;
+    panel.classList.add('open');
+    panel.setAttribute('aria-hidden', 'false');
+    const token = 'panel-' + Date.now();
+    panel.dataset.histoken = token;
+    const url = setGuestParam(guestId);
+    history.pushState({ panel: true, token }, '', url);
+  }
+
+  function closePanel({ fromPopstate = false } = {}) {
+    if (!panel.classList.contains('open')) return;
+    panel.classList.remove('open');
+    panel.setAttribute('aria-hidden', 'true');
+    const url = setGuestParam(null);
+    history.replaceState(history.state, '', url);
+    if (!fromPopstate) {
+      const s = history.state;
+      if (s && s.panel && s.token === panel.dataset.histoken) {
+        history.back();
+      }
+    }
+  }
+
+  window.addEventListener('popstate', (e) => {
+    if (panel.classList.contains('open')) {
+      closePanel({ fromPopstate: true });
+    }
+  });
+
+  document.addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-open-guest]');
+    if (btn) openPanel(btn.getAttribute('data-open-guest'));
+  });
+  closeBtn?.addEventListener('click', () => closePanel());
+</script>
+
 </body>
 </html>
