@@ -473,7 +473,7 @@ function openDetail(id){
   history.pushState({ modal: 'detail', token }, '');
 }
 
-ffunction closeDetail(arg) {
+function closeDetail(arg) {
   var fromPopstate = arg && arg.fromPopstate ? arg.fromPopstate : false;
   const detailEl = document.getElementById('detail');
   if (!detailEl.classList.contains('open')) return;
