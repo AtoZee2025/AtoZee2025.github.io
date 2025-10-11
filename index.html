@@ -198,16 +198,10 @@ h1.seat-title {
   transform: translateY(-2px); /* raises the icon up */
 }
 
-    .agenda-head {
+   .agenda-head {
   display: flex;
   flex-direction: column;
   gap: 4px;
-}
-
-.agenda-now {
-  font-size: 0.85rem;
-  color: #6b2f2f;
-  font-weight: 500;
 }
 
 .agenda-list {
@@ -217,6 +211,10 @@ h1.seat-title {
   display: flex;
   flex-direction: column;
   gap: 12px;
+}
+
+.agenda-lock-row {
+  margin-top: -6px;
 }
 
 .agenda-item {
@@ -256,8 +254,8 @@ h1.seat-title {
 }
 
 .agenda-lock-msg {
-  grid-column: 1 / -1;
-  margin-top: 10px;
+  display: block;
+  padding: 0 14px;
   font-size: 0.9rem;
   color: #6b2f2f;
   font-weight: 500;
@@ -278,6 +276,7 @@ h1.seat-title {
     font-size: 0.9rem;
   }
 }
+    
     .hidden{ display:none }
 
     .chips{ display:flex; flex-wrap:wrap; gap:8px; margin-top:8px }
@@ -322,7 +321,6 @@ h1.seat-title {
     <aside class="app agenda" aria-labelledby="agendaTitle">
       <header class="agenda-head">
         <h2 id="agendaTitle">Tonight's Schedule</h2>
-        <div class="agenda-now" id="agendaNow" aria-live="polite"></div>
       </header>
 
       <ul class="agenda-list" id="agendaList" role="list"></ul>
@@ -389,7 +387,7 @@ function dismissKeyboard() {
 }
 
     const AGENDA_TIMEZONE = 'America/New_York';
-const AGENDA_UNLOCK_AT = { hour: 18, minute: 30 };
+const AGENDA_UNLOCK_AT = { hour: 00, minute: 30 };
 const AGENDA_ITEMS = [
   {
     time: '6:00 PM',
@@ -493,7 +491,7 @@ function renderAgenda() {
       lockMessage.id = 'agendaLockMessage';
       lockMessage.className = 'agenda-lock-msg';
       lockMessage.setAttribute('aria-live', 'polite');
-      lockMessage.textContent = 'More of tonight’s surprises unlock at 6:30 PM';
+      lockMessage.textContent = 'Check back for more at 6:30 PM!';
       li.appendChild(lockMessage);
     }
 
