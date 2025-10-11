@@ -255,8 +255,9 @@ h1.seat-title {
   opacity: 0.45;
 }
 
-.agenda-next {
-  margin-top: 16px;
+.agenda-lock-msg {
+  grid-column: 1 / -1;
+  margin-top: 10px;
   font-size: 0.9rem;
   color: #6b2f2f;
   font-weight: 500;
@@ -277,7 +278,6 @@ h1.seat-title {
     font-size: 0.9rem;
   }
 }
-
     .hidden{ display:none }
 
     .chips{ display:flex; flex-wrap:wrap; gap:8px; margin-top:8px }
@@ -318,16 +318,15 @@ h1.seat-title {
       </div>
     </div>
 
-    <!-- RIGHT: Agenda (Eastern Time) -->
+    <!-- RIGHT: Tonight's Schedule -->
     <aside class="app agenda" aria-labelledby="agendaTitle">
       <header class="agenda-head">
-        <h2 id="agendaTitle">Agenda (ET)</h2>
+        <h2 id="agendaTitle">Tonight's Schedule</h2>
         <div class="agenda-now" id="agendaNow" aria-live="polite"></div>
       </header>
 
       <ul class="agenda-list" id="agendaList" role="list"></ul>
-
-      <div class="agenda-next" id="agendaNext" aria-live="polite"></div>
+      
     </aside>
   </div>
 </div>
@@ -390,7 +389,7 @@ function dismissKeyboard() {
 }
 
     const AGENDA_TIMEZONE = 'America/New_York';
-const AGENDA_UNLOCK_AT = { hour: 00, minute: 36 };
+const AGENDA_UNLOCK_AT = { hour: 18, minute: 30 };
 const AGENDA_ITEMS = [
   {
     time: '6:00 PM',
@@ -488,6 +487,16 @@ function renderAgenda() {
 
     li.appendChild(time);
     li.appendChild(content);
+
+    if (index === 0) {
+      const lockMessage = document.createElement('div');
+      lockMessage.id = 'agendaLockMessage';
+      lockMessage.className = 'agenda-lock-msg';
+      lockMessage.setAttribute('aria-live', 'polite');
+      lockMessage.textContent = 'More of tonight’s surprises unlock at 6:30 PM';
+      li.appendChild(lockMessage);
+    }
+
     list.appendChild(li);
   });
 
@@ -511,14 +520,17 @@ function updateAgendaLockState() {
 
   const nowLabel = document.getElementById('agendaNow');
   if (nowLabel) {
-    nowLabel.textContent = `Current time (ET): ${now.display}`;
+    nowLabel.textContent = `Current time: ${now.display}`;
   }
 
-  const nextLabel = document.getElementById('agendaNext');
-  if (nextLabel) {
-    nextLabel.textContent = unlocked
-      ? 'All festivities are now revealed—see you on the dance floor!'
-      : 'More of tonight’s surprises unlock at 6:30 PM ET.';
+  const lockMessage = document.getElementById('agendaLockMessage');
+  if (lockMessage) {
+    if (unlocked) {
+      lockMessage.classList.add('hidden');
+    } else {
+      lockMessage.classList.remove('hidden');
+      lockMessage.textContent = 'More of tonight’s surprises unlock at 6:30 PM';
+    }
   }
 }
 
