@@ -198,6 +198,86 @@ h1.seat-title {
   transform: translateY(-2px); /* raises the icon up */
 }
 
+    .agenda-head {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.agenda-now {
+  font-size: 0.85rem;
+  color: #6b2f2f;
+  font-weight: 500;
+}
+
+.agenda-list {
+  list-style: none;
+  padding: 0;
+  margin: 12px 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.agenda-item {
+  display: grid;
+  grid-template-columns: 88px 1fr;
+  gap: 12px;
+  padding: 12px 14px;
+  background: #fdfbf7;
+  border: 1px solid rgba(107, 47, 47, 0.18);
+  border-radius: 14px;
+  box-shadow: 0 2px 6px rgba(107, 47, 47, 0.05);
+}
+
+.agenda-item .agenda-time {
+  font-weight: 600;
+  color: #6b2f2f;
+  font-size: 0.95rem;
+  letter-spacing: 0.02em;
+}
+
+.agenda-item .agenda-content {
+  color: #3d3d3d;
+  font-size: 0.95rem;
+  line-height: 1.45;
+  font-weight: 500;
+}
+
+.agenda-item[data-locked="true"]:not(.is-unlocked) .agenda-content {
+  filter: blur(6px);
+  opacity: 0.32;
+  pointer-events: none;
+  user-select: none;
+}
+
+.agenda-item[data-locked="true"]:not(.is-unlocked) .agenda-time {
+  opacity: 0.45;
+}
+
+.agenda-next {
+  margin-top: 16px;
+  font-size: 0.9rem;
+  color: #6b2f2f;
+  font-weight: 500;
+}
+
+@media (max-width: 720px) {
+  .agenda-item {
+    grid-template-columns: 72px 1fr;
+    gap: 10px;
+    padding: 12px;
+  }
+
+  .agenda-item .agenda-time {
+    font-size: 0.9rem;
+  }
+
+  .agenda-item .agenda-content {
+    font-size: 0.9rem;
+  }
+}
+
     .hidden{ display:none }
 
     .chips{ display:flex; flex-wrap:wrap; gap:8px; margin-top:8px }
@@ -308,6 +388,145 @@ function dismissKeyboard() {
   // Optional: tame any viewport jump
   // window.scrollTo({ top: 0, behavior: 'instant' });
 }
+
+    const AGENDA_TIMEZONE = 'America/New_York';
+const AGENDA_UNLOCK_AT = { hour: 18, minute: 30 };
+const AGENDA_ITEMS = [
+  {
+    time: '6:00 PM',
+    lines: [
+      'Guest Arrival',
+      'Bubble Tea Booth & Bar is Open!'
+    ]
+  },
+  {
+    time: '6:30 PM',
+    lines: [
+      'Family & Friends Portraits - Listen for your Group #!'
+    ]
+  },
+  {
+    time: '7:10 PM',
+    lines: ['Guests are Seated for Dinner']
+  },
+  {
+    time: '8:00 PM',
+    lines: ['Photobooth is Open']
+  },
+  {
+    time: '9:30 PM',
+    lines: ['Dessert Served']
+  },
+  {
+    time: '10:00 PM',
+    lines: ['Dance Floor Opens']
+  },
+  {
+    time: '10:30 PM',
+    lines: ['Cake & Late Night are Available']
+  },
+  {
+    time: '12:30 AM',
+    lines: ['Last Call']
+  }
+];
+
+function getEasternNow() {
+  const now = new Date();
+  const localeOptions = {
+    timeZone: AGENDA_TIMEZONE,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false
+  };
+  const formatted = now.toLocaleString('en-US', localeOptions);
+  const [datePart, timePart] = formatted.split(', ');
+  const [month, day, year] = datePart.split('/').map(Number);
+  const [hour, minute] = timePart.split(':').map(Number);
+  const display = now.toLocaleString('en-US', {
+    timeZone: AGENDA_TIMEZONE,
+    hour: 'numeric',
+    minute: '2-digit'
+  });
+  return {
+    hour,
+    minute,
+    display
+  };
+}
+
+function isAgendaUnlocked(current) {
+  if (!current) return false;
+  const { hour, minute } = current;
+  if (hour > AGENDA_UNLOCK_AT.hour) return true;
+  if (hour === AGENDA_UNLOCK_AT.hour && minute >= AGENDA_UNLOCK_AT.minute) return true;
+  return false;
+}
+
+function renderAgenda() {
+  const list = document.getElementById('agendaList');
+  if (!list) return;
+  list.innerHTML = '';
+
+  AGENDA_ITEMS.forEach((item, index) => {
+    const li = document.createElement('li');
+    li.className = 'agenda-item';
+    if (index > 0) {
+      li.dataset.locked = 'true';
+    }
+
+    const time = document.createElement('div');
+    time.className = 'agenda-time';
+    time.textContent = item.time;
+
+    const content = document.createElement('div');
+    content.className = 'agenda-content';
+    content.innerHTML = item.lines.map(line => `<span>${line}</span>`).join('<br>');
+
+    li.appendChild(time);
+    li.appendChild(content);
+    list.appendChild(li);
+  });
+
+  updateAgendaLockState();
+}
+
+function updateAgendaLockState() {
+  const list = document.getElementById('agendaList');
+  if (!list) return;
+
+  const now = getEasternNow();
+  const unlocked = isAgendaUnlocked(now);
+
+  list.querySelectorAll('.agenda-item[data-locked="true"]').forEach(item => {
+    if (unlocked) {
+      item.classList.add('is-unlocked');
+    } else {
+      item.classList.remove('is-unlocked');
+    }
+  });
+
+  const nowLabel = document.getElementById('agendaNow');
+  if (nowLabel) {
+    nowLabel.textContent = `Current time (ET): ${now.display}`;
+  }
+
+  const nextLabel = document.getElementById('agendaNext');
+  if (nextLabel) {
+    nextLabel.textContent = unlocked
+      ? 'All festivities are now revealed—see you on the dance floor!'
+      : 'More of tonight’s surprises unlock at 6:30 PM ET.';
+  }
+}
+
+renderAgenda();
+setInterval(updateAgendaLockState, 30000);
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden) updateAgendaLockState();
+});
 
     /* ===== CSV helpers (robust) ===== */
     function detectDelimiter(firstLine){
