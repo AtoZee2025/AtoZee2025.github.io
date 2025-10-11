@@ -261,6 +261,11 @@ h1.seat-title {
   font-weight: 500;
 }
 
+.agenda-lock-row.is-unlocked .agenda-lock-msg {
+  color: #2f6650;
+  font-weight: 600;
+}
+
 @media (max-width: 720px) {
   .agenda-item {
     grid-template-columns: 72px 1fr;
@@ -386,8 +391,8 @@ function dismissKeyboard() {
   // window.scrollTo({ top: 0, behavior: 'instant' });
 }
 
-    const AGENDA_TIMEZONE = 'America/New_York';
-const AGENDA_UNLOCK_AT = { hour: 00, minute: 30 };
+   const AGENDA_TIMEZONE = 'America/New_York';
+const AGENDA_UNLOCK_AT = { hour: 02, minute: 30 };
 const AGENDA_ITEMS = [
   {
     time: '6:00 PM',
@@ -440,18 +445,11 @@ function getEasternNow() {
     hour12: false
   };
   const formatted = now.toLocaleString('en-US', localeOptions);
-  const [datePart, timePart] = formatted.split(', ');
-  const [month, day, year] = datePart.split('/').map(Number);
+  const [, timePart] = formatted.split(', ');
   const [hour, minute] = timePart.split(':').map(Number);
-  const display = now.toLocaleString('en-US', {
-    timeZone: AGENDA_TIMEZONE,
-    hour: 'numeric',
-    minute: '2-digit'
-  });
   return {
     hour,
-    minute,
-    display
+    minute
   };
 }
 
@@ -486,16 +484,22 @@ function renderAgenda() {
     li.appendChild(time);
     li.appendChild(content);
 
+    list.appendChild(li);
+
     if (index === 0) {
+      const lockRow = document.createElement('li');
+      lockRow.id = 'agendaLockRow';
+      lockRow.className = 'agenda-lock-row';
+
       const lockMessage = document.createElement('div');
       lockMessage.id = 'agendaLockMessage';
       lockMessage.className = 'agenda-lock-msg';
       lockMessage.setAttribute('aria-live', 'polite');
       lockMessage.textContent = 'Check back for more at 6:30 PM!';
-      li.appendChild(lockMessage);
-    }
 
-    list.appendChild(li);
+      lockRow.appendChild(lockMessage);
+      list.appendChild(lockRow);
+    }
   });
 
   updateAgendaLockState();
@@ -516,19 +520,19 @@ function updateAgendaLockState() {
     }
   });
 
-  const nowLabel = document.getElementById('agendaNow');
-  if (nowLabel) {
-    nowLabel.textContent = `Current time: ${now.display}`;
+  const lockMessage = document.getElementById('agendaLockMessage');
+  const lockRow = document.getElementById('agendaLockRow');
+
+  if (lockRow) {
+    lockRow.classList.remove('hidden');
+    lockRow.classList.toggle('is-unlocked', unlocked);
   }
 
-  const lockMessage = document.getElementById('agendaLockMessage');
   if (lockMessage) {
-    if (unlocked) {
-      lockMessage.classList.add('hidden');
-    } else {
-      lockMessage.classList.remove('hidden');
-      lockMessage.textContent = 'More of tonight’s surprises unlock at 6:30 PM';
-    }
+    lockMessage.classList.remove('hidden');
+    lockMessage.textContent = unlocked
+      ? 'From Annie & George: Thank you for celebrating with us! 💞'
+      : 'Check back for more at 6:30 PM!';
   }
 }
 
