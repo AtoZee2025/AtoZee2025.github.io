@@ -198,7 +198,7 @@ h1.seat-title {
   transform: translateY(-2px); /* raises the icon up */
 }
 
-   .agenda-head {
+  .agenda-head {
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -215,6 +215,10 @@ h1.seat-title {
 
 .agenda-lock-row {
   margin-top: -6px;
+}
+
+.agenda-celebration-row {
+  margin-top: 4px;
 }
 
 .agenda-item {
@@ -261,9 +265,10 @@ h1.seat-title {
   font-weight: 500;
 }
 
-.agenda-lock-row.is-unlocked .agenda-lock-msg {
+.agenda-celebration-msg {
   color: #2f6650;
   font-weight: 600;
+  text-align: center;
 }
 
 @media (max-width: 720px) {
@@ -391,8 +396,8 @@ function dismissKeyboard() {
   // window.scrollTo({ top: 0, behavior: 'instant' });
 }
 
-   const AGENDA_TIMEZONE = 'America/New_York';
-const AGENDA_UNLOCK_AT = { hour: 00, minute: 30 };
+const AGENDA_TIMEZONE = 'America/New_York';
+const AGENDA_UNLOCK_AT = { hour: 18, minute: 30 };
 const AGENDA_ITEMS = [
   {
     time: '6:00 PM',
@@ -495,12 +500,23 @@ function renderAgenda() {
       lockMessage.id = 'agendaLockMessage';
       lockMessage.className = 'agenda-lock-msg';
       lockMessage.setAttribute('aria-live', 'polite');
-      lockMessage.textContent = 'Check back for more at 6:30 PM!';
+      lockMessage.textContent = 'Check back for more at 6:30pm!';
 
       lockRow.appendChild(lockMessage);
       list.appendChild(lockRow);
     }
   });
+
+  const celebrationRow = document.createElement('li');
+  celebrationRow.id = 'agendaCelebrationRow';
+  celebrationRow.className = 'agenda-lock-row agenda-celebration-row hidden';
+
+  const celebrationMessage = document.createElement('div');
+  celebrationMessage.className = 'agenda-lock-msg agenda-celebration-msg';
+  celebrationMessage.textContent = 'From Annie & George: Thank you for celebrating with us! 💞';
+
+  celebrationRow.appendChild(celebrationMessage);
+  list.appendChild(celebrationRow);
 
   updateAgendaLockState();
 }
@@ -520,19 +536,15 @@ function updateAgendaLockState() {
     }
   });
 
-  const lockMessage = document.getElementById('agendaLockMessage');
   const lockRow = document.getElementById('agendaLockRow');
+  const celebrationRow = document.getElementById('agendaCelebrationRow');
 
   if (lockRow) {
-    lockRow.classList.remove('hidden');
-    lockRow.classList.toggle('is-unlocked', unlocked);
+    lockRow.classList.toggle('hidden', unlocked);
   }
 
-  if (lockMessage) {
-    lockMessage.classList.remove('hidden');
-    lockMessage.textContent = unlocked
-      ? 'From Annie & George: Thank you for celebrating with us! 💞'
-      : 'Check back for more at 6:30 PM!';
+  if (celebrationRow) {
+    celebrationRow.classList.toggle('hidden', !unlocked);
   }
 }
 
