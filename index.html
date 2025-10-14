@@ -547,6 +547,22 @@ function renderAgenda() {
   celebrationMessage.className = 'agenda-lock-msg agenda-celebration-msg';
   celebrationMessage.textContent = 'From Annie & George: Thank you for coming!';
 
+  const celebrationLink = document.createElement('a');
+  celebrationLink.className = 'agenda-celebration-link';
+  celebrationLink.href = 'https://drive.google.com/drive/folders/1pfE-3Ao2CsArGTPJnrt8y01Pwxu-6fFF?usp=drive_link';
+  celebrationLink.target = '_blank';
+  celebrationLink.rel = 'noopener noreferrer';
+  celebrationLink.textContent = 'Share your photos and videos with us here';
+
+  celebrationMessage.appendChild(celebrationLink);
+
+  const celebrationEmoji = document.createElement('span');
+  celebrationEmoji.className = 'link-emoji';
+  celebrationEmoji.setAttribute('aria-hidden', 'true');
+  celebrationEmoji.textContent = '📷';
+
+  celebrationMessage.appendChild(celebrationEmoji);
+  
   celebrationRow.appendChild(celebrationMessage);
   list.appendChild(celebrationRow);
 
