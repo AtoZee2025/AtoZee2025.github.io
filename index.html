@@ -156,7 +156,7 @@ input, button, textarea, select {
     .hint-link,
     .agenda-celebration-link {
       color: inherit;
-      font-weight: 600;
+      font-weight: inherit;
       text-decoration: underline;
       text-decoration-thickness: 1px;
       text-underline-offset: 3px;
@@ -175,9 +175,10 @@ input, button, textarea, select {
     .meta{ color:var(--muted); font-size:12px }
     .badge{ font-size:12px; padding:4px 8px; border-radius:999px; background:var(--badge-bg); color:var(--badge-ink); display:inline-block }
     .footer{ margin-top:18px; color:var(--muted); font-size:12px; text-align:center }
-.footer .hint {
+    .footer .hint {
       font-family: "Parisienne", "Poppins", cursive;
       font-weight: 400;
+      font-size: 18px;
       color: var(--ink);
     }
     .footer .hint-link {
@@ -295,8 +296,10 @@ h1.seat-title {
 }
 
 .agenda-celebration-msg {
-  color: #2f6650;
-  font-weight: 600;
+  font-family: "Parisienne", "Poppins", cursive;
+  font-weight: 400;
+  font-size: 18px;
+  color: var(--ink);
   text-align: center;
 }
 
