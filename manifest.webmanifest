@@ -1,0 +1,10 @@
+{
+  "name": "Yummi Local",
+  "short_name": "Yummi",
+  "description": "Offline-first restaurant and food log with local storage.",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#f8fafc",
+  "theme_color": "#0f172a",
+  "icons": []
+}
